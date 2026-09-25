@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel · Simulación Proyecto Logístico</title>
+<style>
+  :root{
+    --bg:#EFEDE6;
+    --panel:#F7F6F1;
+    --ink:#1B1F23;
+    --ink-soft:#5B6169;
+    --line:#D9D5C9;
+    --accent:#E8590C;
+    --accent-ink:#FFF6EE;
+    --ruta-b:#2B4C6F;
+    --ruta-e:#946C1F;
+    --ok:#2F7D5C;
+    --bad:#B23A2F;
+    --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+  body{min-height:100vh;}
+
+  .layout{display:grid;grid-template-columns:300px 1fr;min-height:100vh;}
+  @media (max-width:860px){ .layout{grid-template-columns:1fr;} }
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    background:var(--ink);
+    color:#EDEAE1;
+    padding:28px 24px;
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  @media (max-width:860px){ .sidebar{position:static;height:auto;} }
+
+  .brand{font-size:13px;letter-spacing:.02em;color:#A9AFA0;margin-bottom:2px;}
+  .brand strong{display:block;color:#fff;font-size:19px;font-weight:700;margin-top:4px;letter-spacing:-0.01em;}
+  .brand .sub{font-size:12.5px;color:#8C9186;margin-top:6px;line-height:1.5;}
+
+  .field-group{margin-top:26px;}
+  .field-group h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:#8C9186;margin:0 0 12px;font-weight:600;}
+  label{display:block;font-size:12.5px;color:#C7CBBF;margin-bottom:4px;margin-top:12px;}
+  label:first-child{margin-top:0;}
+  input[type=text], input[type=number]{
+    width:100%;background:#2A2F27;border:1px solid #3E443A;color:#fff;
+    padding:9px 10px;border-radius:5px;font-family:var(--mono);font-size:13.5px;
+  }
+  input[type=text]:focus, input[type=number]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .status{
+    margin-top:22px;padding:10px 12px;border-radius:6px;font-size:12.5px;line-height:1.5;
+    background:#2A2F27;border:1px solid #3E443A;
+  }
+  .status.ok{border-color:var(--ok);color:#9FE0BE;}
+  .status.bad{border-color:var(--bad);color:#F2B4A8;}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#8C9186;}
+  .status.ok .dot{background:var(--ok);}
+  .status.bad .dot{background:var(--bad);}
+
+  .btn-check{
+    margin-top:10px;width:100%;padding:9px;border-radius:5px;border:1px solid #3E443A;
+    background:transparent;color:#EDEAE1;font-size:12.5px;cursor:pointer;
+  }
+  .btn-check:hover{border-color:var(--accent);color:var(--accent);}
+
+  /* ---------- Main ---------- */
+  main{padding:28px 36px 80px;max-width:1080px;}
+  @media (max-width:860px){ main{padding:22px 18px 60px;} }
+
+  .page-title{font-size:26px;font-weight:700;letter-spacing:-0.01em;margin:0 0 4px;}
+  .page-desc{color:var(--ink-soft);font-size:14.5px;margin:0 0 26px;max-width:620px;line-height:1.55;}
+
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:26px;flex-wrap:wrap;}
+  .tab{
+    padding:10px 16px;font-size:13.5px;font-weight:600;color:var(--ink-soft);
+    cursor:pointer;border-bottom:2px solid transparent;user-select:none;
+  }
+  .tab.active{color:var(--ink);border-bottom-color:var(--accent);}
+  .tab:hover{color:var(--ink);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px;margin-bottom:20px;}
+  .card h2{font-size:15px;margin:0 0 4px;}
+  .card .hint{font-size:12.5px;color:var(--ink-soft);margin:0 0 16px;}
+
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:6px;}
+  .ctl{display:flex;flex-direction:column;gap:4px;}
+  .ctl label{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .ctl input{
+    background:#fff;border:1px solid var(--line);border-radius:5px;padding:8px 10px;
+    font-family:var(--mono);font-size:13.5px;width:130px;
+  }
+  .ctl input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .btn{
+    background:var(--accent);color:#fff;border:none;border-radius:5px;
+    padding:10px 18px;font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .btn:hover{background:#CC4E0A;}
+  .btn:disabled{background:#C7A78F;cursor:progress;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:4px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);font-weight:600;}
+  td.num{font-family:var(--mono);}
+  tr:last-child td{border-bottom:none;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:6px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px 14px;}
+  .stat .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);}
+  .stat .value{font-family:var(--mono);font-size:19px;margin-top:4px;font-weight:600;}
+
+  .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;}
+  .pill.b{background:#E4EBF1;color:var(--ruta-b);}
+  .pill.e{background:#F2E9D6;color:var(--ruta-e);}
+
+  .bar-row{display:grid;grid-template-columns:160px 1fr 60px;align-items:center;gap:10px;margin-top:8px;font-size:13px;}
+  .bar-track{background:#E7E4D9;border-radius:4px;height:14px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--accent);}
+  .bar-fill.b{background:var(--ruta-b);}
+  .bar-fill.e{background:var(--ruta-e);}
+
+  .hist{display:flex;align-items:flex-end;gap:4px;height:170px;margin-top:14px;border-bottom:1px solid var(--line);padding-bottom:2px;}
+  .hist .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .hist .col .bar{width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px;}
+  .hist .col .n{font-size:10.5px;color:var(--ink-soft);margin-bottom:3px;font-family:var(--mono);}
+  .hist .col .lbl{font-size:9.5px;color:var(--ink-soft);margin-top:5px;font-family:var(--mono);white-space:nowrap;transform:rotate(-40deg);transform-origin:top left;}
+
+  .formula{
+    font-family:var(--mono);background:#fff;border:1px solid var(--line);border-radius:6px;
+    padding:12px 14px;font-size:13.5px;margin:10px 0;color:var(--ruta-b);
+  }
+
+  .empty{color:var(--ink-soft);font-size:13.5px;padding:20px 4px;}
+  .error-box{background:#FBEAE6;border:1px solid var(--bad);color:#7A281D;border-radius:6px;padding:12px 14px;font-size:13px;margin-top:10px;}
+
+  svg text{font-family:var(--sans);}
+  .node-box{fill:#fff;stroke:var(--line);stroke-width:1.5;}
+  .node-box.evento{fill:var(--ink);stroke:var(--ink);}
+  .node-label{font-size:12px;font-weight:700;fill:var(--ink);}
+  .node-label.evento{fill:#fff;}
+  .node-sub{font-size:10px;fill:var(--ink-soft);}
+  .edge{stroke:var(--ink-soft);stroke-width:1.5;fill:none;marker-end:url(#arrow);}
+
+  .footer-note{font-size:12px;color:var(--ink-soft);margin-top:30px;line-height:1.6;}
+  code{background:#fff;border:1px solid var(--line);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">
+      Backend FastAPI
+      <strong>Simulación Logística</strong>
+      <div class="sub">Panel de control para los endpoints de /simular y /actividades. No guarda datos propios: cada acción llama al backend en el momento.</div>
+    </div>
+
+    <div class="field-group">
+      <h3>Conexión</h3>
+      <label for="baseUrl">URL del backend</label>
+      <input type="text" id="baseUrl" value="http://127.0.0.1:8000">
+      <button class="btn-check" onclick="verificarConexion()">Probar conexión</button>
+      <div class="status" id="estadoConexion"><span class="dot"></span>Sin verificar todavía</div>
+    </div>
+
+    <div class="field-group">
+      <h3>Generador Congruencial Mixto</h3>
+      <label for="semilla">Semilla (X0)</label>
+      <input type="number" id="semilla" value="3922">
+      <div class="row2">
+        <div>
+          <label for="a">a</label>
+          <input type="number" id="a" value="1221">
+        </div>
+        <div>
+          <label for="c">c</label>
+          <input type="number" id="c" value="1714">
+        </div>
+      </div>
+      <label for="m">m — módulo (número de legajo)</label>
+      <input type="number" id="m" value="45123">
+    </div>
+
+    <div class="footer-note" style="color:#8C9186;margin-top:24px;">
+      Estos cuatro valores se envían en cada llamado. Cambiar cualquiera de ellos cambia toda la secuencia simulada, pero de forma reproducible.
+    </div>
+  </aside>
+
+  <main>
+    <h1 class="page-title">Panel de simulación</h1>
+    <p class="page-desc">Usa los cuatro endpoints del backend: la definición de la red, una réplica suelta para inspeccionar el detalle, un lote completo con todos los estimadores, y el tiempo a fijar con nivel de confianza.</p>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="red">Red de actividades</div>
+      <div class="tab" data-tab="unica">Réplica única</div>
+      <div class="tab" data-tab="lote">Simulación por lote</div>
+      <div class="tab" data-tab="confianza">Tiempo con confianza</div>
+    </div>
+
+    <!-- ===================== TAB: RED ===================== -->
+    <section class="panel active" id="panel-red">
+      <div class="card">
+        <h2>GET /actividades</h2>
+        <p class="hint">Estructura de la red: dos ramas en paralelo que convergen en F.</p>
+        <button class="btn" onclick="cargarActividades()">Cargar red</button>
+        <div id="redContenido"></div>
+      </div>
+    </section>
+
+    <!-- ===================== TAB: UNICA ===================== -->
+    <section class="panel" id="panel-unica">
+      <div class="card">
+        <h2>POST /simular/replica-unica</h2>
+        <p class="hint">Corre una sola réplica con la configuración del GCM de la izquierda.</p>
+        <button class="btn" onclick="simularUnica()">Simular una réplica</button>
+        <div id="unicaContenido"></div>
+      </div>
+    </section>
+
+    <!-- ===================== TAB: LOTE ===================== -->
+    <section class="panel" id="panel-lote">
+      <div class="card">
+        <h2>POST /simular/lote</h2>
+        <p class="hint">Corre n réplicas y calcula todos los estimadores de forma online (sin tablas).</p>
+        <div class="controls">
+          <div class="ctl"><label>n réplicas</label><input type="number" id="loteN" value="1000"></div>
+          <div class="ctl"><label>Umbral ≤ (min)</label><input type="number" id="loteUmbralMenor" value="60"></div>
+          <div class="ctl"><label>Umbral ≥ (min)</label><input type="number" id="loteUmbralMayor" value="90"></div>
+          <button class="btn" onclick="simularLote()">Simular lote</button>
+        </div>
+        <div id="loteContenido"></div>
+      </div>
+    </section>
+
+    <!-- ===================== TAB: CONFIANZA ===================== -->
+    <section class="panel" id="panel-confianza">
+      <div class="card">
+        <h2>POST /simular/tiempo-con-confianza</h2>
+        <p class="hint">Corre n réplicas (99 por defecto) y calcula el tiempo a fijar con el nivel de confianza pedido.</p>
+        <div class="controls">
+          <div class="ctl"><label>n réplicas</label><input type="number" id="confN" value="99"></div>
+          <div class="ctl"><label>Nivel de confianza</label><input type="number" id="confNivel" value="0.95" step="0.01" min="0.5" max="0.999"></div>
+          <button class="btn" onclick="calcularConfianza()">Calcular</button>
+        </div>
+        <div id="confContenido"></div>
+      </div>
+    </section>
+
+    <p class="footer-note">
+      Backend esperado: <code>uvicorn app.main:app --reload</code> desde la carpeta del proyecto. Si este archivo se abre como <code>file://</code> y el backend corre en otra máquina o puerto, actualizá la URL en el panel izquierdo.
+    </p>
+  </main>
+</div>
+
+<script>
+  // ---------- Config helpers ----------
+  function baseUrl(){ return document.getElementById('baseUrl').value.replace(/\/+$/,''); }
+  function rngConfig(){
+    return {
+      semilla: Number(document.getElementById('semilla').value),
+      a: Number(document.getElementById('a').value),
+      c: Number(document.getElementById('c').value),
+      m: Number(document.getElementById('m').value),
+    };
+  }
+
+  async function llamar(path, options){
+    const url = baseUrl() + path;
+    let res;
+    try{
+      res = await fetch(url, options);
+    }catch(e){
+      throw new Error(`No se pudo conectar con ${url}. Verificá que el backend esté corriendo (uvicorn app.main:app --reload) y que la URL sea correcta.`);
+    }
+    if(!res.ok){
+      let detalle = res.statusText;
+      try{ const body = await res.json(); detalle = body.detail || JSON.stringify(body); }catch(e){}
+      throw new Error(`El backend respondió ${res.status}: ${detalle}`);
+    }
+    return res.json();
+  }
+
+  function errorBox(msg){
+    return `<div class="error-box">${msg}</div>`;
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- Conexión ----------
+  async function verificarConexion(){
+    const el = document.getElementById('estadoConexion');
+    el.className = 'status';
+    el.innerHTML = '<span class="dot"></span>Probando...';
+    try{
+      await llamar('/', {});
+      el.className = 'status ok';
+      el.innerHTML = '<span class="dot"></span>Conectado correctamente';
+    }catch(e){
+      el.className = 'status bad';
+      el.innerHTML = '<span class="dot"></span>' + e.message;
+    }
+  }
+
+  // ---------- RED DE ACTIVIDADES ----------
+  async function cargarActividades(){
+    const cont = document.getElementById('redContenido');
+    cont.innerHTML = '<p class="empty">Cargando...</p>';
+    try{
+      const data = await llamar('/actividades', {});
+      cont.innerHTML = dibujarRed(data) + tablaActividades(data);
+    }catch(e){
+      cont.innerHTML = errorBox(e.message);
+    }
+  }
+
+  function dibujarRed(data){
+    const act = data.actividades;
+    const D = (nombre)=>{
+      const d = act[nombre];
+      if(d.tipo==='constante') return d.valor + ' min (fija)';
+      if(d.tipo==='discreta') return d.valores.map((v,i)=>v+'min '+Math.round(d.probabilidades[i]*100)+'%').join(' / ');
+      if(d.tipo==='uniforme') return 'U['+d.minimo+', '+d.maximo+']';
+      if(d.tipo==='exponencial') return 'Exp(media='+d.media+')';
+      return '';
+    };
+    // Coordenadas fijas de un layout de dos ramas -> convergencia
+    const nodos = {
+      Inicio:{x:20,  y:110, w:80, h:44, evento:true, label:'Inicio'},
+      A:     {x:140, y:40,  w:100,h:50, label:'A · Pago/Stock'},
+      B:     {x:280, y:40,  w:110,h:50, label:'B · Picking'},
+      C:     {x:140, y:170, w:100,h:50, label:'C · Etiqueta'},
+      D:     {x:280, y:170, w:110,h:50, label:'D · Packing'},
+      E:     {x:430, y:170, w:110,h:50, label:'E · Cal. Calidad'},
+      F:     {x:590, y:105, w:100,h:50, label:'F · Despacho'},
+      Fin:   {x:730, y:110, w:80, h:44, evento:true, label:'Fin'},
+    };
+    const edges = [['Inicio','A'],['A','B'],['Inicio','C'],['C','D'],['D','E'],['B','F'],['E','F'],['F','Fin']];
+    const center=(n)=>({x:n.x+n.w/2,y:n.y+n.h/2});
+
+    let svgNodes='', svgEdges='';
+    for(const [from,to] of edges){
+      const n1=nodos[from], n2=nodos[to];
+      const p1 = {x:n1.x+n1.w, y:n1.y+n1.h/2};
+      const p2 = {x:n2.x, y:n2.y+n2.h/2};
+      const midx = (p1.x+p2.x)/2;
+      svgEdges += `<path class="edge" d="M ${p1.x} ${p1.y} C ${midx} ${p1.y}, ${midx} ${p2.y}, ${p2.x} ${p2.y}"/>`;
+    }
+    for(const key in nodos){
+      const n = nodos[key];
+      const dist = act[key] ? D(key) : '';
+      svgNodes += `
+        <g>
+          <rect class="node-box ${n.evento?'evento':''}" x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="7"></rect>
+          <text class="node-label ${n.evento?'evento':''}" x="${n.x+n.w/2}" y="${n.y+n.h/2-(n.evento?0:4)}" text-anchor="middle">${n.label}</text>
+          ${n.evento?'':`<text class="node-sub" x="${n.x+n.w/2}" y="${n.y+n.h/2+11}" text-anchor="middle">${dist}</text>`}
+        </g>`;
+    }
+    return `
+      <div style="overflow-x:auto;margin-top:4px;">
+        <svg width="850" height="260" viewBox="0 0 850 260">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#5B6169"></path>
+            </marker>
+          </defs>
+          ${svgEdges}
+          ${svgNodes}
+        </svg>
+      </div>
+      <div class="stat-grid" style="margin-top:18px;">
+        <div class="stat"><div class="label">Rama Producto</div><div class="value" style="font-size:14px;color:var(--ruta-b);">${data.logica.rama_producto.join(' → ')}</div></div>
+        <div class="stat"><div class="label">Rama Empaque</div><div class="value" style="font-size:14px;color:var(--ruta-e);">${data.logica.rama_empaque.join(' → ')}</div></div>
+        <div class="stat"><div class="label">Convergencia</div><div class="value" style="font-size:13px;">${data.logica.convergencia}</div></div>
+      </div>`;
+  }
+
+  function tablaActividades(data){
+    const rows = Object.entries(data.actividades).map(([k,v])=>{
+      let dist='';
+      if(v.tipo==='constante') dist = `Constante — ${v.valor} min`;
+      else if(v.tipo==='discreta') dist = 'Discreta — ' + v.valores.map((val,i)=>`${val}min (${Math.round(v.probabilidades[i]*100)}%)`).join(', ');
+      else if(v.tipo==='uniforme') dist = `Uniforme — U[${v.minimo}, ${v.maximo}]`;
+      else if(v.tipo==='exponencial') dist = `Exponencial — media ${v.media} min`;
+      return `<tr><td><strong>${k}</strong></td><td>${v.descripcion}</td><td>${dist}</td><td class="num">${v.predecesoras.join(', ')||'—'}</td></tr>`;
+    }).join('');
+    return `<table style="margin-top:22px;">
+      <thead><tr><th>Código</th><th>Descripción</th><th>Distribución</th><th>Predecesoras</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  // ---------- REPLICA UNICA ----------
+  async function simularUnica(){
+    const cont = document.getElementById('unicaContenido');
+    cont.innerHTML = '<p class="empty">Simulando...</p>';
+    try{
+      const data = await llamar('/simular/replica-unica', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({rng: rngConfig()})
+      });
+      const filas = Object.keys(data.duraciones).map(k=>{
+        return `<tr><td><strong>${k}</strong></td><td class="num">${fmt(data.duraciones[k])}</td><td class="num">${fmt(data.tiempos_finalizacion[k])}</td></tr>`;
+      }).join('');
+      cont.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat"><div class="label">Duración total del proyecto</div><div class="value">${fmt(data.duracion_total_proyecto)} min</div></div>
+          <div class="stat"><div class="label">Rama crítica de esta réplica</div><div class="value" style="font-size:15px;">
+            <span class="pill ${data.ruta_critica.startsWith('Producto')?'b':'e'}">${data.ruta_critica}</span>
+          </div></div>
+          <div class="stat"><div class="label">Ruta Producto (A→B)</div><div class="value">${fmt(data.tiempo_ruta_producto)} min</div></div>
+          <div class="stat"><div class="label">Ruta Empaque (C→D→E)</div><div class="value">${fmt(data.tiempo_ruta_empaque)} min</div></div>
+        </div>
+        <table style="margin-top:20px;">
+          <thead><tr><th>Actividad</th><th>Duración (min)</th><th>Finaliza en (min)</th></tr></thead>
+          <tbody>${filas}</tbody>
+        </table>`;
+    }catch(e){
+      cont.innerHTML = errorBox(e.message);
+    }
+  }
+
+  // ---------- LOTE ----------
+  async function simularLote(){
+    const cont = document.getElementById('loteContenido');
+    cont.innerHTML = '<p class="empty">Simulando lote, puede tardar un instante con n grande...</p>';
+    try{
+      const data = await llamar('/simular/lote', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          rng: rngConfig(),
+          n: Number(document.getElementById('loteN').value),
+          umbral_menor_igual: Number(document.getElementById('loteUmbralMenor').value),
+          umbral_mayor_igual: Number(document.getElementById('loteUmbralMayor').value),
+        })
+      });
+
+      const dp = data.duracion_proyecto;
+      const props = data.proporcion_ruta_critica;
+      const barrasProp = Object.entries(props).map(([nombre,val])=>{
+        const cls = nombre.startsWith('Producto') ? 'b':'e';
+        return `<div class="bar-row">
+          <div>${nombre}</div>
+          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${(val*100).toFixed(1)}%"></div></div>
+          <div class="num">${(val*100).toFixed(1)}%</div>
+        </div>`;
+      }).join('');
+
+      const filasAct = Object.entries(data.duracion_promedio_por_actividad).map(([k,s])=>{
+        return `<tr><td><strong>${k}</strong></td><td class="num">${fmt(s.media)}</td><td class="num">${fmt(s.desvio_estandar)}</td><td class="num">${fmt(s.minimo)}</td><td class="num">${fmt(s.maximo)}</td></tr>`;
+      }).join('');
+
+      const maxFrec = Math.max(...data.distribucion_de_frecuencias.map(i=>i.frecuencia), 1);
+      const histCols = data.distribucion_de_frecuencias.map(i=>{
+        const h = Math.max(2, Math.round((i.frecuencia/maxFrec)*140));
+        const etiqueta = i.hasta===null ? `≥${Math.round(i.desde)}` : `${Math.round(i.desde)}–${Math.round(i.hasta)}`;
+        return `<div class="col">
+          <div class="n">${i.frecuencia}</div>
+          <div class="bar" style="height:${h}px;"></div>
+          <div class="lbl">${etiqueta}</div>
+        </div>`;
+      }).join('');
+
+      const pMenor = data.probabilidad_terminar_en_o_antes_de;
+      const pMayor = data.probabilidad_terminar_en_o_despues_de;
+
+      const sparkline = dibujarPromedioMovil(data.promedio_movil_duracion_proyecto);
+
+      cont.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat"><div class="label">Duración media del proyecto</div><div class="value">${fmt(dp.media)} min</div></div>
+          <div class="stat"><div class="label">Desvío estándar</div><div class="value">${fmt(dp.desvio_estandar)} min</div></div>
+          <div class="stat"><div class="label">Tiempo mínimo estimado</div><div class="value">${fmt(data.tiempo_minimo_estimado_proyecto)} min</div></div>
+          <div class="stat"><div class="label">Tiempo máximo observado</div><div class="value">${fmt(dp.maximo)} min</div></div>
+        </div>
+
+        <h2 style="margin-top:26px;font-size:14px;">Promedio móvil de la duración del proyecto (n=${data.n_replicas})</h2>
+        ${sparkline}
+
+        <h2 style="margin-top:26px;font-size:14px;">Proporción de veces que cada rama fue crítica (cuello de botella)</h2>
+        ${barrasProp}
+
+        <h2 style="margin-top:26px;font-size:14px;">Probabilidades</h2>
+        <div class="stat-grid">
+          <div class="stat"><div class="label">P( finalizar ≤ ${pMenor.umbral_minutos} min )</div><div class="value" style="color:var(--ok)">${(pMenor.probabilidad*100).toFixed(1)}%</div></div>
+          <div class="stat"><div class="label">P( finalizar ≥ ${pMayor.umbral_minutos} min )</div><div class="value" style="color:var(--bad)">${(pMayor.probabilidad*100).toFixed(1)}%</div></div>
+        </div>
+
+        <h2 style="margin-top:26px;font-size:14px;">Distribución de frecuencias (10 intervalos)</h2>
+        <div class="hist">${histCols}</div>
+
+        <h2 style="margin-top:26px;font-size:14px;">Duración por actividad</h2>
+        <table>
+          <thead><tr><th>Actividad</th><th>Media</th><th>Desvío</th><th>Mínimo</th><th>Máximo</th></tr></thead>
+          <tbody>${filasAct}</tbody>
+        </table>`;
+    }catch(e){
+      cont.innerHTML = errorBox(e.message);
+    }
+  }
+
+  function dibujarPromedioMovil(serie){
+    if(!serie || serie.length===0) return '<p class="empty">Sin datos.</p>';
+    // Downsample a lo sumo 200 puntos para que el SVG sea liviano
+    const maxPuntos = 200;
+    const paso = Math.max(1, Math.floor(serie.length/maxPuntos));
+    const puntos = [];
+    for(let i=0;i<serie.length;i+=paso) puntos.push(serie[i]);
+    if(puntos[puntos.length-1] !== serie[serie.length-1]) puntos.push(serie[serie.length-1]);
+
+    const w=800,h=140,pad=8;
+    const min = Math.min(...puntos), max = Math.max(...puntos);
+    const rango = (max-min)||1;
+    const coords = puntos.map((v,i)=>{
+      const x = pad + (i/(puntos.length-1||1))*(w-2*pad);
+      const y = pad + (1-(v-min)/rango)*(h-2*pad);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+
+    return `<div style="overflow-x:auto;">
+      <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="background:#fff;border:1px solid var(--line);border-radius:6px;">
+        <polyline points="${coords}" fill="none" stroke="var(--accent)" stroke-width="2"></polyline>
+      </svg>
+    </div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-top:4px;">Rango mostrado: ${fmt(min)} – ${fmt(max)} min (converge a la media a medida que crece n)</div>`;
+  }
+
+  // ---------- CONFIANZA ----------
+  async function calcularConfianza(){
+    const cont = document.getElementById('confContenido');
+    cont.innerHTML = '<p class="empty">Calculando...</p>';
+    try{
+      const data = await llamar('/simular/tiempo-con-confianza', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          rng: rngConfig(),
+          n: Number(document.getElementById('confN').value),
+          nivel_confianza: Number(document.getElementById('confNivel').value),
+        })
+      });
+      cont.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat"><div class="label">Tiempo a fijar</div><div class="value" style="color:var(--accent);font-size:22px;">${fmt(data.tiempo_a_fijar_minutos)} min</div></div>
+          <div class="stat"><div class="label">Media muestral (n=${data.n_replicas})</div><div class="value">${fmt(data.media_muestral)} min</div></div>
+          <div class="stat"><div class="label">Desvío estándar muestral</div><div class="value">${fmt(data.desvio_estandar_muestral)} min</div></div>
+          <div class="stat"><div class="label">z (${Math.round(data.nivel_confianza*100)}% confianza)</div><div class="value">${fmt(data.z)}</div></div>
+        </div>
+        <div class="formula">T = media + z · (desvío / √n) = ${fmt(data.media_muestral)} + ${fmt(data.z)} · (${fmt(data.desvio_estandar_muestral)} / √${data.n_replicas}) = ${fmt(data.tiempo_a_fijar_minutos)}</div>
+        <p style="font-size:13.5px;color:var(--ink-soft);">${data.interpretacion}</p>`;
+    }catch(e){
+      cont.innerHTML = errorBox(e.message);
+    }
+  }
+
+  function fmt(x){
+    if(x===null || x===undefined) return '—';
+    return Number(x).toLocaleString('es-AR', {maximumFractionDigits:2, minimumFractionDigits:2});
+  }
+
+  // Intento silencioso de verificar conexión al abrir
+  window.addEventListener('load', verificarConexion);
+</script>
+</body>
+</html>
