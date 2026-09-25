@@ -291,7 +291,7 @@ main {
 }
 
 .ctl input {
-  background: #fff;
+  background: #2c2c2c;
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 8px 10px;
