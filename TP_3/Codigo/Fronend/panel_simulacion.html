@@ -43,7 +43,7 @@
           </div>
         </div>
         <label for="m">m — módulo (número de legajo)</label>
-        <input type="number" id="m" value="96478">
+        <input type="number" id="m" value="45123">
       </div>
 
       <div class="footer-note" style="color:#8C9186;margin-top:24px;">
@@ -433,7 +433,7 @@
 
     function fmt(x) {
       if (x === null || x === undefined) return '—';
-      return Number(x).toLocaleString('es-AR', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+      return Number(x).toLocaleString('es-AR', { maximumFractionDigits: 4, minimumFractionDigits: 4 });
     }
 
     // Intento silencioso de verificar conexión al abrir
