@@ -64,10 +64,8 @@ class GeneradorCongruencialMixto:
             "llamadas_realizadas": self._llamadas,
         }
 
-
-# Offsets primos usados para separar los "streams" de cada variable a
-# partir de una única semilla base. Determinísticos => reproducibles.
-_OFFSETS_PRIMOS = [97, 151, 233, 307, 401, 479, 557, 613, 701, 787]
+    def toString(self) -> str:
+        return str(self.x_actual)
 
 
 def crear_generadores_por_variable(
@@ -77,16 +75,29 @@ def crear_generadores_por_variable(
     m: int,
     nombres_variables: list[str],
 ) -> dict[str, GeneradorCongruencialMixto]:
-    """Crea un GeneradorCongruencialMixto INDEPENDIENTE para cada variable.
+    """Crea el mapeo {variable: generador} SIN offsets primos.
 
-    Mismos (semilla_base, a, c, m) => siempre los mismos generadores =>
-    resultado 100% replicable, como pide la consigna.
+    Ya no se desplaza la semilla por variable: se crea UN ÚNICO
+    GeneradorCongruencialMixto (semilla_base, a, c, m) y se lo referencia
+    desde todas las variables. Como es el mismo objeto, cada llamada a
+    `.uniforme()` -sin importar desde qué variable se haga- avanza el
+    MISMO stream secuencial (X0 -> X1 -> X2 -> ...), en vez de que cada
+    variable tenga su propio punto de partida.
+
+    Sigue siendo 100% reproducible: mismos (semilla_base, a, c, m) =>
+    misma secuencia de números.
+
+    Atención: al compartir un único stream, los U(0,1) que le tocan a
+    cada variable dependen del ORDEN en que se los pida (por eso
+    `red_proyecto.py` siempre recorre las actividades en el mismo orden
+    topológico). Si dos variables piden un número "al mismo tiempo" en
+    ramas paralelas, iguel se van a servir en el orden en que el código
+    las procese, no en paralelo real.
     """
-    generadores: dict[str, GeneradorCongruencialMixto] = {}
-    for i, nombre in enumerate(nombres_variables):
-        offset = _OFFSETS_PRIMOS[i % len(_OFFSETS_PRIMOS)] * (i // len(_OFFSETS_PRIMOS) + 1)
-        semilla_var = (semilla_base + offset) % m
-        if semilla_var == 0:
-            semilla_var = 1
-        generadores[nombre] = GeneradorCongruencialMixto(semilla=semilla_var, a=a, c=c, m=m)
-    return generadores
+    generador_unico = GeneradorCongruencialMixto(
+        semilla=semilla_base, a=a, c=c, m=m)
+
+    # for nombre in nombres_variables:
+    #     generador_unico.siguiente_entero()
+    #     print(generador_unico.toString())
+    return {nombre: generador_unico for nombre in nombres_variables}

@@ -28,10 +28,11 @@ def muestrear_discreta(valores: list[float], probabilidades: list[float], u: flo
 
 def muestrear_uniforme(minimo: float, maximo: float, u: float) -> float:
     """U[minimo, maximo] = minimo + (maximo - minimo) * U."""
-    return minimo + (maximo - minimo) * u
+    uniforme = minimo + (maximo - minimo) * u
+    return uniforme
 
 
 def muestrear_exponencial(media: float, u: float) -> float:
     """Exponencial de media dada, por transformada inversa: -media * ln(1-U)."""
     u_ajustado = min(u, 1 - 1e-12)  # evita ln(0)
-    return -media * math.log(1 - u_ajustado)
+    return -(1 / media) * math.log(1 - u_ajustado)
