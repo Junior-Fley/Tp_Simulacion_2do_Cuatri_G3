@@ -35,4 +35,4 @@ def muestrear_uniforme(minimo: float, maximo: float, u: float) -> float:
 def muestrear_exponencial(media: float, u: float) -> float:
     """Exponencial de media dada, por transformada inversa: -media * ln(1-U)."""
     u_ajustado = min(u, 1 - 1e-12)  # evita ln(0)
-    return -(1 / media) * math.log(1 - u_ajustado)
+    return -media * math.log(1 - u_ajustado)
