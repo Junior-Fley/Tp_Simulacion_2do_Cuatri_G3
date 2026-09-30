@@ -69,35 +69,24 @@ class GeneradorCongruencialMixto:
 
 
 def crear_generadores_por_variable(
-    semilla_base: int,
-    a: int,
-    c: int,
-    m: int,
-    nombres_variables: list[str],
+    coeficientes_por_variable: dict[str, dict],
 ) -> dict[str, GeneradorCongruencialMixto]:
-    """Crea el mapeo {variable: generador} SIN offsets primos.
+    """Crea un GeneradorCongruencialMixto INDEPENDIENTE por variable,
+    usando los coeficientes que se proveen para cada una. No se derivan
+    de una semilla base ni se comparten entre variables: cada variable
+    aleatoria del proyecto (B, D, E, F) trae sus propios (semilla, a, c, m).
 
-    Ya no se desplaza la semilla por variable: se crea UN ÚNICO
-    GeneradorCongruencialMixto (semilla_base, a, c, m) y se lo referencia
-    desde todas las variables. Como es el mismo objeto, cada llamada a
-    `.uniforme()` -sin importar desde qué variable se haga- avanza el
-    MISMO stream secuencial (X0 -> X1 -> X2 -> ...), en vez de que cada
-    variable tenga su propio punto de partida.
+    coeficientes_por_variable = {
+        "B": {"semilla": .., "a": .., "c": .., "m": ..},
+        "D": {"semilla": .., "a": .., "c": .., "m": ..},
+        "E": {"semilla": .., "a": .., "c": .., "m": ..},
+        "F": {"semilla": .., "a": .., "c": .., "m": ..},
+    }
 
-    Sigue siendo 100% reproducible: mismos (semilla_base, a, c, m) =>
-    misma secuencia de números.
-
-    Atención: al compartir un único stream, los U(0,1) que le tocan a
-    cada variable dependen del ORDEN en que se los pida (por eso
-    `red_proyecto.py` siempre recorre las actividades en el mismo orden
-    topológico). Si dos variables piden un número "al mismo tiempo" en
-    ramas paralelas, iguel se van a servir en el orden en que el código
-    las procese, no en paralelo real.
+    Sigue siendo 100% reproducible: mismos coeficientes para una variable
+    => misma secuencia de números para esa variable.
     """
-    generador_unico = GeneradorCongruencialMixto(
-        semilla=semilla_base, a=a, c=c, m=m)
-
-    # for nombre in nombres_variables:
-    #     generador_unico.siguiente_entero()
-    #     print(generador_unico.toString())
-    return {nombre: generador_unico for nombre in nombres_variables}
+    return {
+        nombre: GeneradorCongruencialMixto(**coefs)
+        for nombre, coefs in coeficientes_por_variable.items()
+    }

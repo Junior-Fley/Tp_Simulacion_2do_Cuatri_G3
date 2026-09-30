@@ -15,22 +15,22 @@ guardado ningún dato de la primera pasada.
 
 from __future__ import annotations
 
-from estadisticas import ContadorProporcion, ContadorUmbral, HistogramaOnline, OnlineStats, z_para_confianza
-from red_proyecto import DEFINICION_ACTIVIDADES, NOMBRES_VARIABLES_ALEATORIAS, simular_una_replica
-from rng import crear_generadores_por_variable
-from schemas import ConfigGCMPorVariable as ConfigGCM
+from .estadisticas import ContadorProporcion, ContadorUmbral, HistogramaOnline, OnlineStats, z_para_confianza
+from .red_proyecto import DEFINICION_ACTIVIDADES, simular_una_replica
+from .rng import crear_generadores_por_variable
+from .schemas import ConfigGCMPorVariable
 
 
-def _nuevos_generadores(config: ConfigGCM):
+def _nuevos_generadores(config: ConfigGCMPorVariable):
     return crear_generadores_por_variable(config.model_dump())
 
 
-def simular_replica_unica(config: ConfigGCM) -> dict:
+def simular_replica_unica(config: ConfigGCMPorVariable) -> dict:
     generadores = _nuevos_generadores(config)
     return simular_una_replica(generadores)
 
 
-def simular_lote(config: ConfigGCM, n: int, umbral_menor_igual: float, umbral_mayor_igual: float) -> dict:
+def simular_lote(config: ConfigGCMPorVariable, n: int, umbral_menor_igual: float, umbral_mayor_igual: float) -> dict:
     """Corre n réplicas y calcula todos los estimadores pedidos en el TP,
     trabajando siempre de forma online (sin tablas)."""
 
@@ -38,14 +38,12 @@ def simular_lote(config: ConfigGCM, n: int, umbral_menor_igual: float, umbral_ma
     generadores = _nuevos_generadores(config)
 
     stats_proyecto = OnlineStats()
-    stats_por_actividad = {nombre: OnlineStats()
-                           for nombre in DEFINICION_ACTIVIDADES}
+    stats_por_actividad = {nombre: OnlineStats() for nombre in DEFINICION_ACTIVIDADES}
     contador_ruta_critica = ContadorProporcion()
     contador_menor_igual = ContadorUmbral(umbral_menor_igual, "menor_igual")
     contador_mayor_igual = ContadorUmbral(umbral_mayor_igual, "mayor_igual")
 
-    # promedio móvil hasta cada iteración (pedido explícitamente)
-    medias_acumuladas: list[float] = []
+    medias_acumuladas: list[float] = []  # promedio móvil hasta cada iteración (pedido explícitamente)
 
     for _ in range(n):
         resultado = simular_una_replica(generadores)
@@ -66,8 +64,7 @@ def simular_lote(config: ConfigGCM, n: int, umbral_menor_igual: float, umbral_ma
     # Se reinician los MISMOS generadores (misma semilla) => se reproducen
     # exactamente las mismas n réplicas, sin haber guardado ningún dato.
     generadores_pasada_2 = _nuevos_generadores(config)
-    histograma = HistogramaOnline(
-        extremo_inferior=tiempo_minimo_estimado, ancho_total=90.0, n_intervalos_iguales=9)
+    histograma = HistogramaOnline(extremo_inferior=tiempo_minimo_estimado, ancho_total=90.0, n_intervalos_iguales=9)
     for _ in range(n):
         resultado = simular_una_replica(generadores_pasada_2)
         histograma.actualizar(resultado["duracion_total_proyecto"])
@@ -93,7 +90,7 @@ def simular_lote(config: ConfigGCM, n: int, umbral_menor_igual: float, umbral_ma
     }
 
 
-def calcular_tiempo_con_confianza(config: ConfigGCM, n: int, nivel_confianza: float) -> dict:
+def calcular_tiempo_con_confianza(config: ConfigGCMPorVariable, n: int, nivel_confianza: float) -> dict:
     """Simula n réplicas (por defecto 99, según el enunciado) y calcula el
     tiempo T tal que P(finalizar en <= T) sea al menos `nivel_confianza`,
     usando el límite superior de confianza unilateral para la media:

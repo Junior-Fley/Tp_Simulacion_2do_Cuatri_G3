@@ -80,7 +80,9 @@ DEFINICION_ACTIVIDADES: dict[str, dict] = {
     },
 }
 
-NOMBRES_VARIABLES_ALEATORIAS = list(DEFINICION_ACTIVIDADES.keys())
+NOMBRES_VARIABLES_ALEATORIAS = [
+    nombre for nombre, defn in DEFINICION_ACTIVIDADES.items() if defn["tipo"] != "constante"
+]
 
 
 def _muestrear_actividad(definicion: dict, u: float | None) -> float:
@@ -109,9 +111,12 @@ def simular_una_replica(
 
     for nombre in ORDEN_TOPOLOGICO:
         definicion = DEFINICION_ACTIVIDADES[nombre]
-        generador = generadores[nombre]
-        u = None if definicion["tipo"] == "constante" else generador.uniforme()
-        duracion = _muestrear_actividad(definicion, u)
+        if definicion["tipo"] == "constante":
+            duracion = muestrear_constante(definicion["valor"])
+        else:
+            generador = generadores[nombre]
+            u = generador.uniforme()
+            duracion = _muestrear_actividad(definicion, u)
 
         predecesoras = definicion["predecesoras"]
         inicio_actividad = max((finalizacion[p]

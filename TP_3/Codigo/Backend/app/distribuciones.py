@@ -28,8 +28,7 @@ def muestrear_discreta(valores: list[float], probabilidades: list[float], u: flo
 
 def muestrear_uniforme(minimo: float, maximo: float, u: float) -> float:
     """U[minimo, maximo] = minimo + (maximo - minimo) * U."""
-    uniforme = minimo + (maximo - minimo) * u
-    return uniforme
+    return minimo + (maximo - minimo) * u
 
 
 def muestrear_exponencial(media: float, u: float) -> float:
